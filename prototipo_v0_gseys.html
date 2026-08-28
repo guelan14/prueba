@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Prototipo v0 — Sistema de seguimiento Gseys (wireframe)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; background: #e8e8e8; margin: 0; padding: 0; color: #222; }
+  .topbar { background: #cfcfcf; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #999; font-size: 13px; }
+  .topbar button { background: #fff; border: 1px solid #999; padding: 4px 10px; cursor: pointer; font-size: 12px; }
+  .instructions { max-width: 760px; margin: 10px auto 0; padding: 10px 16px; font-size: 12px; color: #555; background: #fff8dc; border: 1px dashed #c9a227; }
+
+  .phone-frame { width: min(380px, 94vw); margin: 16px auto; background: #fff; border: 3px solid #333; border-radius: 18px; overflow: hidden; height: min(700px, 82vh); display: flex; flex-direction: column; }
+  .desktop-frame { width: min(780px, 94vw); margin: 16px auto; background: #fff; border: 3px solid #333; border-radius: 8px; overflow: hidden; height: min(620px, 82vh); display: flex; flex-direction: column; }
+
+  @media (max-width: 480px) {
+    .topbar { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .instructions { font-size: 11px; margin: 8px 10px 0; padding: 8px 10px; }
+    .app-header { font-size: 13px; padding: 8px 10px; }
+    .screen-body { padding: 10px; }
+    .box { font-size: 12px; padding: 8px; }
+    .navbtn { font-size: 10px; padding: 8px 2px; }
+  }
+
+  .app-header { background: #d9d9d9; padding: 10px 14px; border-bottom: 2px dashed #999; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: space-between; }
+  .app-header .left { display:flex; align-items:center; gap:10px; }
+  .app-header .back, .app-header .exit { cursor: pointer; border: 1px solid #888; background: #fff; padding: 3px 9px; font-size: 11px; font-weight: normal; }
+
+  .screen-body { padding: 14px; flex: 1; overflow-y: auto; }
+  .sub-screen { display: none; }
+  .sub-screen.active { display: flex; flex-direction: column; height: 100%; }
+  .screen { display: none; }
+  .screen.active { display: flex; }
+
+  .bottomnav { display: flex; border-top: 2px dashed #999; background: #ececec; }
+  .navbtn { flex: 1; text-align: center; padding: 10px 4px; font-size: 11px; cursor: pointer; border-right: 1px dashed #ccc; color: #555; }
+  .navbtn:last-child { border-right: none; }
+  .navbtn.active-nav { background: #cfcfcf; font-weight: bold; color: #111; }
+
+  .box { border: 1.5px dashed #888; background: #f5f5f5; padding: 10px; margin-bottom: 10px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: background 0.15s, transform 0.1s; }
+  .box:hover { background: #ececec; }
+  .box:active { transform: scale(0.98); background: #dcdcdc; }
+  .box.static { cursor: default; }
+  .box.static:hover { background: #f5f5f5; }
+  .box.static:active { transform: none; }
+  .box .label-title { font-weight: bold; margin-bottom: 3px; }
+  .box .label-sub { color: #555; font-size: 12px; }
+
+  .btn { display: inline-block; border: 1.5px solid #333; background: #eee; padding: 8px 14px; text-align: center; cursor: pointer; font-size: 13px; margin-top: 6px; border-radius: 4px; }
+  .btn:hover { background: #ddd; }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary { background: #333; color: #fff; border-color: #333; }
+  .btn.primary:hover { background: #555; }
+  .btn.small { padding: 4px 10px; font-size: 11px; }
+  .btn.wide { display:block; text-align:center; }
+
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 12px; margin-bottom: 3px; color: #444; }
+  .field input, .field select, .field textarea { width: 100%; padding: 6px; border: 1.5px dashed #999; background: #fafafa; font-family: inherit; font-size: 13px; }
+
+  .tabs { display: flex; border-bottom: 2px dashed #999; margin-bottom: 10px; }
+  .tab { flex: 1; text-align: center; padding: 8px 4px; font-size: 12px; cursor: pointer; border-right: 1px dashed #ccc; background: #eee; }
+  .tab:last-child { border-right: none; }
+  .tab.active-tab { background: #ccc; font-weight: bold; }
+  .tabcontent { display: none; }
+  .tabcontent.active-tab { display: block; }
+
+  .badge { display: inline-block; font-size: 10px; padding: 2px 6px; border: 1px solid #888; border-radius: 3px; margin-left: 6px; cursor: default; }
+  .badge.pending { background: #fff3c4; border-color: #c9a227; }
+  .badge.synced { background: #d9f2d9; border-color: #5a9c5a; }
+  .badge.prospecto { background: #e0e0e0; }
+  .badge.confirmado { background: #d6e8ff; border-color: #6699cc; }
+  .badge.click { cursor: pointer; }
+
+  .placeholder-photo { border: 1.5px dashed #999; background: #eee; height: 55px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #777; margin-bottom: 8px; }
+  .note { font-size: 11px; color: #777; font-style: italic; margin-top: 10px; }
+  .toast { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 8px 16px; border-radius: 4px; font-size: 12px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 100; }
+  .toast.show { opacity: 1; }
+
+  .toggle-group { display: flex; gap: 8px; margin-bottom: 10px; }
+  .toggle-btn { flex: 1; text-align: center; padding: 8px; border: 1.5px dashed #999; background: #f5f5f5; cursor: pointer; font-size: 12px; }
+  .toggle-btn.selected { background: #ccc; border-style: solid; font-weight: bold; }
+  .section-title { font-size: 13px; font-weight: bold; margin: 4px 0 8px; display:flex; justify-content:space-between; align-items:center; }
+  .empty-hint { font-size: 12px; color: #888; font-style: italic; padding: 6px 0; }
+  .search-row { margin-bottom: 10px; }
+  .search-row input { width: 100%; padding: 7px; border: 1.5px dashed #999; background: #fafafa; font-size: 13px; }
+  .filter-row { display:flex; gap:6px; margin-bottom: 10px; }
+  .filter-chip { border: 1.5px dashed #999; padding: 4px 10px; font-size: 11px; cursor: pointer; background: #f5f5f5; }
+  .filter-chip.active-chip { background: #ccc; border-style: solid; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <b>Prototipo v0 — wireframe (datos de ejemplo, no persisten al recargar)</b>
+  <button onclick="reiniciar()">Reiniciar todo</button>
+</div>
+<div class="instructions">
+  Navegá con los botones de abajo (Panel / Clientes / Recordatorios). Agregá un cliente nuevo, asignale un trabajo, y mirá cómo aparece del lado del ingeniero. Es una simulación en el navegador — no hay servidor ni base de datos real detrás.
+</div>
+
+<div id="rol" class="screen active">
+  <div class="desktop-frame" style="height:auto; margin:20px auto;">
+    <div class="app-header"><span>Elegir vista (solo para probar el prototipo)</span></div>
+    <div class="screen-body">
+      <div class="box" onclick="entrarJefe()">
+        <div class="label-title">Entrar como Jefe</div>
+        <div class="label-sub">Vista desde oficina — clientes, asignación, recordatorios</div>
+      </div>
+      <div class="box" onclick="entrarIngeniero()">
+        <div class="label-title">Entrar como Ingeniero 1</div>
+        <div class="label-sub">Vista desde el celular — trabajos de hoy e historial</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="appJefe" class="screen">
+  <div class="desktop-frame">
+
+    <div id="jefePanel" class="sub-screen active">
+      <div class="app-header">
+        <div class="left"><span class="exit" onclick="goTo('rol')">Salir</span><span>Panel</span></div>
+      </div>
+      <div class="screen-body">
+        <div class="section-title">Trabajo confirmado — esta semana</div>
+        <div id="listaConfirmados"></div>
+        <div class="section-title">
+          Cartera de futuros clientes
+          <span class="btn small" onclick="irAsignarDesdePanel()">+ Asignar trabajo</span>
+        </div>
+        <div id="listaProspectos"></div>
+      </div>
+      <div class="bottomnav">
+        <div class="navbtn active-nav" onclick="mostrarSub('jefePanel')">Panel</div>
+        <div class="navbtn" onclick="mostrarSub('jefeClientes'); renderClientes();">Clientes</div>
+        <div class="navbtn" onclick="mostrarSub('jefeEmpleados'); renderEmpleados();">Equipo</div>
+        <div class="navbtn" onclick="mostrarSub('jefeRecordatorios'); renderRecordatorios();">Avisos</div>
+      </div>
+    </div>
+
+    <div id="jefeClientes" class="sub-screen">
+      <div class="app-header">
+        <div class="left"><span class="exit" onclick="goTo('rol')">Salir</span><span>Clientes</span></div>
+        <span class="btn small" onclick="mostrarSub('agregarCliente')">+ Agregar cliente</span>
+      </div>
+      <div class="screen-body">
+        <div class="search-row"><input id="buscarCliente" type="text" placeholder="Buscar por nombre..." oninput="renderClientes()"></div>
+        <div class="filter-row">
+          <div class="filter-chip active-chip" data-filtro="todos" onclick="setFiltro(this,'todos')">Todos</div>
+          <div class="filter-chip" data-filtro="prospecto" onclick="setFiltro(this,'prospecto')">Prospectos</div>
+          <div class="filter-chip" data-filtro="confirmado" onclick="setFiltro(this,'confirmado')">Confirmados</div>
+        </div>
+        <div id="listaClientes"></div>
+      </div>
+      <div class="bottomnav">
+        <div class="navbtn" onclick="mostrarSub('jefePanel'); renderJefe();">Panel</div>
+        <div class="navbtn active-nav" onclick="mostrarSub('jefeClientes')">Clientes</div>
+        <div class="navbtn" onclick="mostrarSub('jefeEmpleados'); renderEmpleados();">Equipo</div>
+        <div class="navbtn" onclick="mostrarSub('jefeRecordatorios'); renderRecordatorios();">Avisos</div>
+      </div>
+    </div>
+
+    <div id="jefeEmpleados" class="sub-screen">
+      <div class="app-header">
+        <div class="left"><span class="exit" onclick="goTo('rol')">Salir</span><span>Equipo</span></div>
+        <span class="btn small" onclick="mostrarSub('agregarEmpleado')">+ Agregar empleado</span>
+      </div>
+      <div class="screen-body" id="listaEmpleados"></div>
+      <div class="bottomnav">
+        <div class="navbtn" onclick="mostrarSub('jefePanel'); renderJefe();">Panel</div>
+        <div class="navbtn" onclick="mostrarSub('jefeClientes'); renderClientes();">Clientes</div>
+        <div class="navbtn active-nav" onclick="mostrarSub('jefeEmpleados')">Equipo</div>
+        <div class="navbtn" onclick="mostrarSub('jefeRecordatorios'); renderRecordatorios();">Avisos</div>
+      </div>
+    </div>
+
+    <div id="agregarEmpleado" class="sub-screen">
+      <div class="app-header"><div class="left"><span class="back" onclick="mostrarSub('jefeEmpleados'); renderEmpleados();">‹ Cancelar</span><span>Nuevo empleado</span></div></div>
+      <div class="screen-body">
+        <div class="field"><label>Nombre completo *</label><input id="nuevoEmpleadoNombre" type="text" placeholder="Ej: Juan Pérez"></div>
+        <div class="field">
+          <label>Cargo</label>
+          <select id="nuevoEmpleadoCargo">
+            <option>Representante administrativo</option>
+            <option>Representante técnico</option>
+            <option>Operador Analista</option>
+            <option>Operador de Ensayos</option>
+            <option>Ayudante</option>
+            <option>Administrativo</option>
+          </select>
+        </div>
+        <div class="note" id="nuevoEmpleadoError" style="color:#a33; display:none;">Falta el nombre del empleado.</div>
+        <div class="btn primary wide" onclick="guardarNuevoEmpleado()">Guardar empleado</div>
+      </div>
+    </div>
+
+    <div id="jefeRecordatorios" class="sub-screen">
+      <div class="app-header">
+        <div class="left"><span class="exit" onclick="goTo('rol')">Salir</span><span>Recordatorios</span></div>
+      </div>
+      <div class="screen-body" id="listaRecordatorios"></div>
+      <div class="bottomnav">
+        <div class="navbtn" onclick="mostrarSub('jefePanel'); renderJefe();">Panel</div>
+        <div class="navbtn" onclick="mostrarSub('jefeClientes'); renderClientes();">Clientes</div>
+        <div class="navbtn" onclick="mostrarSub('jefeEmpleados'); renderEmpleados();">Equipo</div>
+        <div class="navbtn active-nav" onclick="mostrarSub('jefeRecordatorios')">Avisos</div>
+      </div>
+    </div>
+
+    <div id="agregarCliente" class="sub-screen">
+      <div class="app-header"><div class="left"><span class="back" onclick="mostrarSub('jefeClientes'); renderClientes();">‹ Cancelar</span><span>Nuevo cliente</span></div></div>
+      <div class="screen-body">
+        <div class="field"><label>Nombre de la empresa *</label><input id="nuevoNombre" type="text" placeholder="Ej: Cooperativa Ejemplo XYZ"></div>
+        <div class="field"><label>Rubro</label><input id="nuevoRubro" type="text" placeholder="Ej: Yerbatera, Metalúrgica..."></div>
+        <div class="field"><label>Dirección</label><input id="nuevaDireccion" type="text" placeholder="Ej: Ruta 12, km 30"></div>
+        <div class="field"><label>Cómo se originó el contacto</label><textarea id="nuevoOrigen" rows="3" placeholder="Ej: Llamó preguntando por servicio de ultrasonido"></textarea></div>
+        <div class="note" id="nuevoError" style="color:#a33; display:none;">Falta el nombre de la empresa.</div>
+        <div class="btn primary wide" onclick="guardarNuevoCliente()">Guardar cliente</div>
+      </div>
+    </div>
+
+    <div id="asignar" class="sub-screen">
+      <div class="app-header"><div class="left"><span class="back" onclick="volverDeAsignar()">‹ Cancelar</span><span>Asignar trabajo</span></div></div>
+      <div class="screen-body">
+        <div class="field"><label>Empresa</label><select id="asignarEmpresa"></select></div>
+        <div class="field"><label>Asignar a</label><select id="asignarIngeniero"></select></div>
+        <div class="field"><label>Información relevada (obligatorio) *</label>
+          <textarea id="asignarInfo" rows="4" placeholder="Qué se habló con el cliente, qué se necesita hacer..."></textarea>
+        </div>
+        <div class="note" id="asignarError" style="color:#a33; display:none;">Falta completar la información relevada — no se puede asignar sin esto.</div>
+        <div class="note">* El sistema no deja confirmar sin este campo — evita que un ingeniero llegue sin información, como pasó con el caso Vogel.</div>
+        <div class="btn primary wide" onclick="confirmarAsignacion()">Confirmar asignación</div>
+      </div>
+    </div>
+
+    <div id="fichaEmpresaJefe" class="sub-screen">
+      <div class="app-header"><div class="left"><span class="back" onclick="mostrarSub(vinoDeFicha)">‹ Volver</span><span id="fichaNombreJ"></span></div></div>
+      <div class="screen-body">
+        <div class="box static">
+          <div class="label-title">Dirección: <span id="fichaDireccionJ"></span></div>
+          <div class="label-sub" id="fichaRubroJ"></div>
+          <div class="btn small" onclick="alert('Simulación: abriría Google Maps con esta dirección')">Ver en Maps</div>
+        </div>
+        <div class="tabs">
+          <div class="tab active-tab" onclick="showTab(this,'tabContactoJ')">Contacto</div>
+          <div class="tab" onclick="showTab(this,'tabPresupuestoJ')">Presupuesto</div>
+          <div class="tab" onclick="showTab(this,'tabTrabajosJ')">Trabajos realizados</div>
+        </div>
+        <div id="tabContactoJ" class="tabcontent active-tab"></div>
+        <div id="tabPresupuestoJ" class="tabcontent"></div>
+        <div id="tabTrabajosJ" class="tabcontent"></div>
+        <div class="btn wide" id="btnAsignarDesdeFicha" onclick="asignarDesdeFicha()">Asignar trabajo a esta empresa</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="appIngeniero" class="screen">
+  <div class="phone-frame">
+
+    <div id="ingHoy" class="sub-screen active">
+      <div class="app-header"><div class="left"><span class="exit" onclick="goTo('rol')">Salir</span><span>Hoy</span></div></div>
+      <div class="screen-body" id="listaIngHoy"></div>
+      <div class="bottomnav">
+        <div class="navbtn active-nav" onclick="mostrarSub('ingHoy')">Hoy</div>
+        <div class="navbtn" onclick="mostrarSub('ingHistorial'); renderHistorialIng();">Historial</div>
+      </div>
+    </div>
+
+    <div id="ingHistorial" class="sub-screen">
+      <div class="app-header"><div class="left"><span class="exit" onclick="goTo('rol')">Salir</span><span>Historial</span></div></div>
+      <div class="screen-body" id="listaIngHistorial"></div>
+      <div class="bottomnav">
+        <div class="navbtn" onclick="mostrarSub('ingHoy'); renderIngeniero();">Hoy</div>
+        <div class="navbtn active-nav" onclick="mostrarSub('ingHistorial')">Historial</div>
+      </div>
+    </div>
+
+    <div id="ingDetalle" class="sub-screen">
+      <div class="app-header"><div class="left"><span class="back" onclick="mostrarSub('ingHoy'); renderIngeniero();">‹ Volver</span><span id="ingDetalleNombre"></span></div></div>
+      <div class="screen-body">
+        <div class="box static">
+          <div class="label-title">Dirección: <span id="ingDetalleDireccion"></span></div>
+          <div class="btn small" onclick="alert('Simulación: abriría Google Maps con esta dirección')">Ver en Maps</div>
+        </div>
+        <div class="box static">
+          <div class="label-title">Info cargada por el jefe</div>
+          <div class="label-sub" id="ingDetalleInfo"></div>
+        </div>
+        <div class="btn primary wide" onclick="resetInformeForm(); mostrarSub('ingInforme')">Completar informe</div>
+      </div>
+    </div>
+
+    <div id="ingInforme" class="sub-screen">
+      <div class="app-header"><div class="left"><span class="back" onclick="mostrarSub('ingDetalle')">‹ Volver</span><span>Informe</span></div>
+        <span class="badge synced click" id="syncBadge" onclick="toggleSignal()">Con señal (tocar)</span>
+      </div>
+      <div class="screen-body">
+        <div class="field"><label>Qué se hizo</label><textarea id="informeDescripcion" rows="3" placeholder="Descripción del trabajo realizado..."></textarea></div>
+        <div class="placeholder-photo">+ Agregar foto</div>
+
+        <div class="field">
+          <label>Viaje al lugar de trabajo</label>
+          <div class="box static" id="viajeEstadoBox">
+            <div class="label-sub" id="viajeEstadoTexto">Todavía no iniciaste el viaje.</div>
+          </div>
+          <div class="btn wide" id="btnIniciarViaje" onclick="iniciarViaje()">Iniciar viaje</div>
+          <div class="btn primary wide" id="btnFinalizarViaje" onclick="finalizarViaje()" style="display:none;">Finalizar viaje</div>
+          <div class="note">El sistema calcula solo el tiempo y los km a partir de cuándo arrancás y terminás el viaje — no hace falta escribirlo a mano.</div>
+        </div>
+
+        <div class="field">
+          <label>¿Almorzó en el camino?</label>
+          <div class="toggle-group">
+            <div class="toggle-btn" onclick="toggleAlmuerzo(this,true)">Sí</div>
+            <div class="toggle-btn selected" onclick="toggleAlmuerzo(this,false)">No</div>
+          </div>
+        </div>
+        <div class="field" id="gastoAlmuerzoField" style="display:none;"><label>Gasto de almuerzo</label><input id="informeAlmuerzo" type="text" placeholder="$"></div>
+        <div class="field"><label>Otros gastos (peaje, etc.)</label><input id="informeOtros" type="text" placeholder="$"></div>
+        <div class="note" id="syncNote">Con señal: se sincroniza al guardar.</div>
+        <div class="btn primary wide" onclick="guardarInforme()">Guardar informe</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let nextId = 5;
+  let empresas = [
+    { id: 1, nombre: "Cooperativa Ejemplo Norte", direccion: "Ruta 12, km 45", rubro: "Yerbatera",
+      asignadoA: "Ingeniero 1",
+      contactos: [
+        { fecha: "15/06", detalle: "Primer contacto — se interesó por medición de espesores" },
+        { fecha: "22/06", detalle: "Se coordinó visita para el miércoles" }
+      ],
+      presupuestos: [ { fecha: "25/06", estado: "Esperando respuesta" } ],
+      trabajos: [ { fecha: "10/07", ingeniero: "Ingeniero 1", detalle: "Medición de espesores — informe completo" } ],
+      infoAsignacion: "Cliente pidió revisar caldera 1, ya tuvo falla de rodamiento hace 6 meses.",
+      pendienteHoy: true },
+    { id: 2, nombre: "Metalúrgica Ejemplo Sur", direccion: "Av. Industrial 300", rubro: "Metalúrgica",
+      asignadoA: "Ingeniero 2",
+      contactos: [ { fecha: "18/07", detalle: "Contacto vía mail, pidió cotización de vibraciones" } ],
+      presupuestos: [], trabajos: [],
+      infoAsignacion: "Revisar vibraciones en dos motores de línea de producción.", pendienteHoy: false },
+    { id: 3, nombre: "Frigorífico Ejemplo del Este", direccion: "—", rubro: "Frigorífico",
+      asignadoA: null,
+      contactos: [ { fecha: "02/08", detalle: "Contacto inicial, sin presupuesto enviado todavía" } ],
+      presupuestos: [], trabajos: [], infoAsignacion: "", pendienteHoy: false },
+    { id: 4, nombre: "Aserradero Ejemplo Piray", direccion: "—", rubro: "Maderero",
+      asignadoA: null,
+      contactos: [ { fecha: "05/08", detalle: "Se envió presupuesto, sin respuesta hace 12 días" } ],
+      presupuestos: [ { fecha: "05/08", estado: "Sin respuesta hace 12 días" } ],
+      trabajos: [], infoAsignacion: "", pendienteHoy: false }
+  ];
+
+  let nextEmpleadoId = 3;
+  let empleados = [
+    { id: 1, nombre: "Ingeniero 1", cargo: "Operador de Ensayos 1" },
+    { id: 2, nombre: "Ingeniero 2", cargo: "Operador de Ensayos 2" }
+  ];
+
+  let fichaActualId = null;
+  let vinoDeFicha = 'jefePanel';
+  let filtroClientes = 'todos';
+  const ING_ACTUAL = "Ingeniero 1";
+  let sinSenal = false;
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  function goTo(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0,0);
+  }
+
+  function mostrarSub(id) {
+    const parent = document.getElementById(id).parentElement;
+    parent.querySelectorAll('.sub-screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    parent.querySelectorAll('.navbtn').forEach(n => n.classList.remove('active-nav'));
+    parent.querySelectorAll('.navbtn').forEach(n => {
+      if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active-nav');
+    });
+  }
+
+  function entrarJefe() { goTo('appJefe'); mostrarSub('jefePanel'); renderJefe(); }
+  function entrarIngeniero() { goTo('appIngeniero'); mostrarSub('ingHoy'); renderIngeniero(); }
+
+  function renderJefe() {
+    const confirmados = empresas.filter(e => e.asignadoA);
+    const prospectos = empresas.filter(e => !e.asignadoA);
+
+    document.getElementById('listaConfirmados').innerHTML = confirmados.length ? confirmados.map(e => `
+      <div class="box" onclick="abrirFichaJefe(${e.id}, 'jefePanel')">
+        <div class="label-title">${e.nombre}</div>
+        <div class="label-sub">Asignado a: ${e.asignadoA}${e.pendienteHoy ? ' · Pendiente hoy' : ' · Trabajo completado'}</div>
+      </div>`).join('') : '<div class="empty-hint">Sin trabajos confirmados todavía.</div>';
+
+    document.getElementById('listaProspectos').innerHTML = prospectos.length ? prospectos.map(e => `
+      <div class="box" onclick="abrirFichaJefe(${e.id}, 'jefePanel')">
+        <div class="label-title">${e.nombre}</div>
+        <div class="label-sub">${e.presupuestos.length ? e.presupuestos[0].estado : 'Contacto inicial, sin presupuesto enviado'}</div>
+      </div>`).join('') : '<div class="empty-hint">Sin prospectos cargados. Agregá uno desde la sección Clientes.</div>';
+  }
+
+  function setFiltro(el, filtro) {
+    filtroClientes = filtro;
+    document.querySelectorAll('#jefeClientes .filter-chip').forEach(c => c.classList.remove('active-chip'));
+    el.classList.add('active-chip');
+    renderClientes();
+  }
+
+  function renderClientes() {
+    const q = (document.getElementById('buscarCliente').value || '').toLowerCase();
+    let lista = empresas.filter(e => e.nombre.toLowerCase().includes(q));
+    if (filtroClientes === 'prospecto') lista = lista.filter(e => !e.asignadoA);
+    if (filtroClientes === 'confirmado') lista = lista.filter(e => e.asignadoA);
+
+    document.getElementById('listaClientes').innerHTML = lista.length ? lista.map(e => `
+      <div class="box" onclick="abrirFichaJefe(${e.id}, 'jefeClientes')">
+        <div class="label-title">${e.nombre} <span class="badge ${e.asignadoA ? 'confirmado' : 'prospecto'}">${e.asignadoA ? 'Confirmado' : 'Prospecto'}</span></div>
+        <div class="label-sub">${e.rubro || 'Rubro sin especificar'} — ${e.direccion}</div>
+      </div>`).join('') : '<div class="empty-hint">No se encontraron clientes con ese filtro.</div>';
+  }
+
+  function guardarNuevoCliente() {
+    const nombre = document.getElementById('nuevoNombre').value.trim();
+    if (!nombre) { document.getElementById('nuevoError').style.display = 'block'; return; }
+    const rubro = document.getElementById('nuevoRubro').value.trim();
+    const direccion = document.getElementById('nuevaDireccion').value.trim() || '—';
+    const origen = document.getElementById('nuevoOrigen').value.trim() || 'Cliente cargado manualmente, sin detalle de origen.';
+
+    empresas.push({
+      id: nextId++, nombre, rubro, direccion, asignadoA: null,
+      contactos: [{ fecha: "hoy", detalle: origen }],
+      presupuestos: [], trabajos: [], infoAsignacion: "", pendienteHoy: false
+    });
+
+    document.getElementById('nuevoNombre').value = '';
+    document.getElementById('nuevoRubro').value = '';
+    document.getElementById('nuevaDireccion').value = '';
+    document.getElementById('nuevoOrigen').value = '';
+    document.getElementById('nuevoError').style.display = 'none';
+
+    showToast("Cliente agregado — ya aparece en la lista");
+    mostrarSub('jefeClientes');
+    renderClientes();
+  }
+
+  function renderEmpleados() {
+    document.getElementById('listaEmpleados').innerHTML = empleados.map(emp => {
+      const trabajosHoy = empresas.filter(e => e.asignadoA === emp.nombre && e.pendienteHoy).length;
+      return `<div class="box static">
+        <div class="label-title">${emp.nombre}</div>
+        <div class="label-sub">${emp.cargo} · ${trabajosHoy} trabajo(s) pendiente(s) hoy</div>
+      </div>`;
+    }).join('');
+  }
+
+  function guardarNuevoEmpleado() {
+    const nombre = document.getElementById('nuevoEmpleadoNombre').value.trim();
+    if (!nombre) { document.getElementById('nuevoEmpleadoError').style.display = 'block'; return; }
+    const cargo = document.getElementById('nuevoEmpleadoCargo').value;
+    empleados.push({ id: nextEmpleadoId++, nombre, cargo });
+    document.getElementById('nuevoEmpleadoNombre').value = '';
+    document.getElementById('nuevoEmpleadoError').style.display = 'none';
+    showToast("Empleado agregado — ya aparece en el equipo");
+    mostrarSub('jefeEmpleados');
+    renderEmpleados();
+  }
+
+  let origenAsignar = 'jefePanel';
+  function irAsignarDesdePanel() { origenAsignar = 'jefePanel'; mostrarSub('asignar'); renderAsignarForm(null); }
+  function asignarDesdeFicha() { origenAsignar = 'fichaEmpresaJefe'; mostrarSub('asignar'); renderAsignarForm(fichaActualId); }
+  function volverDeAsignar() { mostrarSub(origenAsignar); if (origenAsignar==='jefePanel') renderJefe(); }
+
+  function renderAsignarForm(preseleccionId) {
+    const sel = document.getElementById('asignarEmpresa');
+    const prospectos = empresas.filter(e => !e.asignadoA);
+    sel.innerHTML = prospectos.map(e => `<option value="${e.id}" ${e.id===preseleccionId ? 'selected' : ''}>${e.nombre}</option>`).join('');
+
+    const selIng = document.getElementById('asignarIngeniero');
+    selIng.innerHTML = empleados.map(emp => `<option value="${emp.nombre}">${emp.nombre} — ${emp.cargo}</option>`).join('');
+
+    document.getElementById('asignarInfo').value = '';
+    document.getElementById('asignarError').style.display = 'none';
+  }
+
+  function confirmarAsignacion() {
+    const info = document.getElementById('asignarInfo').value.trim();
+    if (!info) { document.getElementById('asignarError').style.display = 'block'; return; }
+    const empresaId = parseInt(document.getElementById('asignarEmpresa').value);
+    const ingeniero = document.getElementById('asignarIngeniero').value;
+    const empresa = empresas.find(e => e.id === empresaId);
+    empresa.asignadoA = ingeniero;
+    empresa.infoAsignacion = info;
+    empresa.pendienteHoy = true;
+    empresa.contactos.unshift({ fecha: "hoy", detalle: "Asignación de trabajo — info cargada: " + info });
+    showToast("Trabajo asignado a " + ingeniero);
+    mostrarSub('jefePanel');
+    renderJefe();
+  }
+
+  function abrirFichaJefe(id, origen) {
+    fichaActualId = id;
+    vinoDeFicha = origen;
+    const e = empresas.find(x => x.id === id);
+    document.getElementById('fichaNombreJ').textContent = e.nombre;
+    document.getElementById('fichaDireccionJ').textContent = e.direccion;
+    document.getElementById('fichaRubroJ').textContent = e.rubro || 'Rubro sin especificar';
+
+    document.getElementById('tabContactoJ').innerHTML = e.contactos.length
+      ? e.contactos.map(c => `<div class="box static"><div class="label-title">${c.fecha}</div><div class="label-sub">${c.detalle}</div></div>`).join('')
+      : '<div class="empty-hint">Sin contactos registrados.</div>';
+    document.getElementById('tabPresupuestoJ').innerHTML = e.presupuestos.length
+      ? e.presupuestos.map(p => `<div class="box static"><div class="label-title">${p.fecha} — Presupuesto</div><div class="label-sub">${p.estado}</div></div>`).join('')
+      : '<div class="empty-hint">Sin presupuestos enviados.</div>';
+    document.getElementById('tabTrabajosJ').innerHTML = e.trabajos.length
+      ? e.trabajos.map(t => `<div class="box static"><div class="label-title">${t.fecha} — ${t.detalle}</div><div class="label-sub">Realizó: ${t.ingeniero}</div></div>`).join('')
+      : '<div class="empty-hint">Sin trabajos realizados todavía.</div>';
+
+    document.querySelectorAll('#fichaEmpresaJefe .tab').forEach((t,i) => t.classList.toggle('active-tab', i===0));
+    document.querySelectorAll('#fichaEmpresaJefe .tabcontent').forEach((c,i) => c.classList.toggle('active-tab', i===0));
+    document.getElementById('btnAsignarDesdeFicha').style.display = e.asignadoA ? 'none' : 'block';
+
+    mostrarSub('fichaEmpresaJefe');
+  }
+
+  function showTab(tabEl, contentId) {
+    const tabsParent = tabEl.parentElement;
+    tabsParent.querySelectorAll('.tab').forEach(t => t.classList.remove('active-tab'));
+    tabEl.classList.add('active-tab');
+    const contentParent = tabsParent.parentElement;
+    contentParent.querySelectorAll('.tabcontent').forEach(c => c.classList.remove('active-tab'));
+    document.getElementById(contentId).classList.add('active-tab');
+  }
+
+  function renderRecordatorios() {
+    const items = [];
+    empresas.forEach(e => {
+      const p = e.presupuestos.find(p => p.estado.includes('Sin respuesta'));
+      if (p) items.push({ nombre: e.nombre, texto: p.estado });
+    });
+    items.push({ nombre: "Cooperativa Ejemplo Norte — Caldera", texto: "Próximo mantenimiento sugerido: en 20 días" });
+    document.getElementById('listaRecordatorios').innerHTML = items.length ? items.map(i => `
+      <div class="box static"><div class="label-title">${i.nombre}</div><div class="label-sub">${i.texto}</div></div>`).join('')
+      : '<div class="empty-hint">Sin recordatorios pendientes.</div>';
+  }
+
+  function renderIngeniero() {
+    const misTrabajos = empresas.filter(e => e.asignadoA === ING_ACTUAL && e.pendienteHoy);
+    document.getElementById('listaIngHoy').innerHTML = misTrabajos.length ? misTrabajos.map(e => `
+      <div class="box" onclick="abrirDetalleIng(${e.id})">
+        <div class="label-title">${e.nombre}</div>
+        <div class="label-sub">${e.direccion}</div>
+      </div>`).join('') : '<div class="empty-hint">No tenés trabajos pendientes por ahora.</div>';
+  }
+
+  function renderHistorialIng() {
+    const hechos = empresas.filter(e => e.asignadoA === ING_ACTUAL && !e.pendienteHoy && e.trabajos.length);
+    document.getElementById('listaIngHistorial').innerHTML = hechos.length ? hechos.map(e => `
+      <div class="box static">
+        <div class="label-title">${e.nombre} <span class="badge synced">Sincronizado</span></div>
+        <div class="label-sub">${e.trabajos[0].fecha} — ${e.trabajos[0].detalle}</div>
+      </div>`).join('') : '<div class="empty-hint">Todavía no completaste trabajos.</div>';
+  }
+
+  function abrirDetalleIng(id) {
+    fichaActualId = id;
+    const e = empresas.find(x => x.id === id);
+    document.getElementById('ingDetalleNombre').textContent = e.nombre;
+    document.getElementById('ingDetalleDireccion').textContent = e.direccion;
+    document.getElementById('ingDetalleInfo').textContent = e.infoAsignacion || "(sin información cargada)";
+    mostrarSub('ingDetalle');
+  }
+
+  function toggleAlmuerzo(btn, si) {
+    const group = btn.parentElement;
+    group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('gastoAlmuerzoField').style.display = si ? 'block' : 'none';
+  }
+
+  function toggleSignal() {
+    sinSenal = !sinSenal;
+    const badge = document.getElementById('syncBadge');
+    const note = document.getElementById('syncNote');
+    if (sinSenal) {
+      badge.textContent = 'Sin señal (tocar)'; badge.className = 'badge pending click';
+      note.textContent = 'Sin señal: el informe se guarda en el celular y se sincroniza solo cuando vuelva la conexión.';
+    } else {
+      badge.textContent = 'Con señal (tocar)'; badge.className = 'badge synced click';
+      note.textContent = 'Con señal: se sincroniza al guardar.';
+    }
+  }
+
+  let viajeIniciado = false;
+  let viajeFinalizado = false;
+  let viajeKmCalculado = null;
+  let viajeMinCalculado = null;
+
+  function resetInformeForm() {
+    viajeIniciado = false;
+    viajeFinalizado = false;
+    viajeKmCalculado = null;
+    viajeMinCalculado = null;
+    document.getElementById('viajeEstadoTexto').textContent = 'Todavía no iniciaste el viaje.';
+    document.getElementById('btnIniciarViaje').style.display = 'block';
+    document.getElementById('btnFinalizarViaje').style.display = 'none';
+    document.getElementById('informeDescripcion').value = '';
+  }
+
+  function iniciarViaje() {
+    viajeIniciado = true;
+    const horaSimulada = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('viajeEstadoTexto').textContent = 'Viaje en curso — iniciado a las ' + horaSimulada + '...';
+    document.getElementById('btnIniciarViaje').style.display = 'none';
+    document.getElementById('btnFinalizarViaje').style.display = 'block';
+  }
+
+  function finalizarViaje() {
+    // Simulación para la maqueta: en la app real esto se calcularía con GPS.
+    viajeMinCalculado = Math.floor(Math.random() * 60) + 15;
+    viajeKmCalculado = Math.floor(Math.random() * 100) + 10;
+    viajeFinalizado = true;
+    document.getElementById('viajeEstadoTexto').innerHTML =
+      'Viaje finalizado — <b>' + viajeMinCalculado + ' min</b> · <b>' + viajeKmCalculado + ' km</b> (calculado automáticamente)';
+    document.getElementById('btnFinalizarViaje').style.display = 'none';
+  }
+
+  function guardarInforme() {
+    const e = empresas.find(x => x.id === fichaActualId);
+    const desc = document.getElementById('informeDescripcion').value || "(sin descripción)";
+    const viajeTexto = viajeFinalizado
+      ? viajeKmCalculado + " km, " + viajeMinCalculado + " min (calculado)"
+      : "(viaje no registrado)";
+    e.trabajos.unshift({ fecha: "hoy", ingeniero: ING_ACTUAL, detalle: desc + " — Viaje: " + viajeTexto });
+    e.pendienteHoy = false;
+    showToast(sinSenal ? "Guardado en el celular — se sincronizará cuando vuelva la señal" : "Informe guardado y sincronizado");
+    mostrarSub('ingHoy');
+    renderIngeniero();
+  }
+
+  function reiniciar() { location.reload(); }
+</script>
+
+
+</body>
+</html>
